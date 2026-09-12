@@ -3,7 +3,6 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { getSSRBrowserClient } from '@/lib/supabase/ssr-browser';
-import { publicEnv } from '@/lib/env';
 
 function LoginInner() {
   const params = useSearchParams();
@@ -13,7 +12,12 @@ function LoginInner() {
   const [busy, setBusy] = useState<null | 'google' | 'email'>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const callbackUrl = `${publicEnv.appUrl}/auth/callback?next=${encodeURIComponent(next)}`;
+  // Redirect back to the SAME origin the user is on (preview / prod / localhost),
+  // so auth works on every deployment. Supabase must allow these in its
+  // redirect-URL config (a wildcard like https://*.vercel.app/auth/callback).
+  const callbackUrl =
+    (typeof window !== 'undefined' ? window.location.origin : '') +
+    `/auth/callback?next=${encodeURIComponent(next)}`;
 
   async function signInWithGoogle() {
     setError(null);

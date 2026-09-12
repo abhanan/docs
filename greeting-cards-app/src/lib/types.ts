@@ -7,6 +7,7 @@ export interface Card {
   title: string | null;
   recipient_label: string | null;
   creator_id: string | null;
+  owner_id: string | null;
   creator_token: string;
   contributor_token: string;
   status: CardStatus;

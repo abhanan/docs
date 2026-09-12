@@ -1,14 +1,18 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { loadMyCards, type SavedCard } from '@/lib/mycards';
-import { creatorLink } from '@/lib/links';
+import { getSSRBrowserClient } from '@/lib/supabase/ssr-browser';
 
 export default function HomePage() {
-  const [mine, setMine] = useState<SavedCard[]>([]);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setMine(loadMyCards());
+    const supabase = getSSRBrowserClient();
+    if (!supabase) {
+      setSignedIn(false);
+      return;
+    }
+    supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
   }, []);
 
   return (
@@ -23,13 +27,30 @@ export default function HomePage() {
             Start a digital greeting card, invite friends to add messages and photos with one
             link, then send the finished wall to someone special.
           </p>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/create"
               className="inline-block rounded-full bg-rose-600 px-8 py-3 text-lg font-semibold text-white shadow-lg transition hover:bg-rose-500 active:scale-[0.98]"
             >
               Create a card
             </Link>
+            {signedIn ? (
+              <Link
+                href="/dashboard"
+                className="inline-block rounded-full border border-stone-300 bg-white px-6 py-3 text-lg font-medium text-stone-700 transition hover:bg-stone-50"
+              >
+                My cards
+              </Link>
+            ) : (
+              signedIn === false && (
+                <Link
+                  href="/login"
+                  className="inline-block rounded-full border border-stone-300 bg-white px-6 py-3 text-lg font-medium text-stone-700 transition hover:bg-stone-50"
+                >
+                  Sign in
+                </Link>
+              )
+            )}
           </div>
         </header>
 
@@ -47,30 +68,10 @@ export default function HomePage() {
           ))}
         </section>
 
-        {mine.length > 0 && (
-          <section className="mt-16">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">
-              Your cards
-            </h2>
-            <ul className="space-y-2">
-              {mine.map((c) => (
-                <li key={c.cardId}>
-                  <Link
-                    href={creatorLink(c.cardId, c.creatorToken)}
-                    className="flex items-center justify-between rounded-xl bg-white/80 px-4 py-3 tile-shadow transition hover:bg-white"
-                  >
-                    <span className="font-medium text-stone-800">
-                      {c.title || c.occasion}
-                    </span>
-                    <span className="text-sm text-stone-400">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        <p className="mt-10 text-center text-sm text-stone-500">
+          Creating a card takes a quick sign-in. Friends who contribute and the people who receive
+          it never need an account.
+        </p>
       </div>
     </main>
   );

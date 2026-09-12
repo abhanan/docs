@@ -100,7 +100,36 @@ npm run typecheck  # tsc --noEmit
 routes return `503 not_configured` until Supabase/R2 env vars are set. Add the
 keys when you have them; no code changes needed.
 
-## Security model (v1, no auth accounts)
+## Creator accounts (v2)
+
+Creators sign in with **Google** or an **email magic link**; contributors and
+recipients stay completely loginless. Both methods are handled inside Supabase
+Auth, so **no new app env vars are needed** — the browser/server SSR clients
+reuse `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+
+Setup (all in the Supabase dashboard + Google Cloud + an SMTP provider):
+
+1. **Run the migration** `supabase/migrations/0002_accounts.sql` in the SQL
+   editor (adds `cards.owner_id` + owner RLS policies).
+2. **Google provider**: Google Cloud Console → APIs & Services → Credentials →
+   create an **OAuth client ID** (Web application). Authorized redirect URI:
+   `https://<your-project>.supabase.co/auth/v1/callback`. Copy the client ID +
+   secret into Supabase → **Authentication → Providers → Google** → enable.
+3. **Magic link**: Supabase → **Authentication → Providers → Email** → enable
+   (email OTP / magic link is on by default). For reliable delivery configure
+   **Project Settings → Authentication → SMTP** with a provider (e.g. Resend —
+   free tier). The built-in email sender is rate-limited and not for production.
+4. **URL config**: Supabase → **Authentication → URL Configuration** →
+   set **Site URL** to your app origin and add
+   `https://<your-app>/auth/callback` (and `http://localhost:3000/auth/callback`
+   for local dev) to **Redirect URLs**.
+
+Routes: `/login` (Google + magic link), `/auth/callback` (code exchange),
+`/dashboard` ("My Cards", session-gated), `/auth/signout`. Creating a card
+requires a session and stamps `owner_id`; the per-card admin link
+(`/card/{id}/{creator_token}`) still works unchanged.
+
+## Security model
 
 - Every privileged write goes through a Next.js API route using the Supabase
   **service-role** key, which validates the URL token (`creator_token`,

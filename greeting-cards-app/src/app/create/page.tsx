@@ -1,10 +1,10 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OCCASIONS } from '@/lib/themes';
 import { ThemePicker } from '@/components/ThemePicker';
-import { saveMyCard, getOrCreateCreatorId } from '@/lib/mycards';
+import { getSSRBrowserClient } from '@/lib/supabase/ssr-browser';
 import type { Card } from '@/lib/types';
 
 export default function CreatePage() {
@@ -16,6 +16,23 @@ export default function CreatePage() {
   const [recipientLabel, setRecipientLabel] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Creating a card requires a signed-in creator (so it lands in "My Cards").
+  useEffect(() => {
+    const supabase = getSSRBrowserClient();
+    if (!supabase) {
+      setAuthChecked(true);
+      return;
+    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.replace('/login?next=/create');
+      } else {
+        setAuthChecked(true);
+      }
+    });
+  }, [router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,25 +53,29 @@ export default function CreatePage() {
           theme_id: themeId,
           title: title.trim() || null,
           recipient_label: recipientLabel.trim() || null,
-          creator_id: getOrCreateCreatorId(),
         }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        router.replace('/login?next=/create');
+        return;
+      }
       if (!res.ok) throw new Error(data.error || 'Could not create the card.');
 
       const card: Card = data.card;
-      saveMyCard({
-        cardId: card.id,
-        creatorToken: card.creator_token,
-        title: card.title || '',
-        occasion: card.occasion,
-        createdAt: card.created_at,
-      });
       router.push(`/card/${card.id}/${card.creator_token}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
       setSubmitting(false);
     }
+  }
+
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-stone-50 text-stone-500">
+        Loading…
+      </main>
+    );
   }
 
   return (

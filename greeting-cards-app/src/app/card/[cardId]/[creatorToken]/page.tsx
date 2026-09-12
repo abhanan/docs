@@ -6,6 +6,7 @@ import { Wall } from '@/components/Wall';
 import { ExportButton } from '@/components/ExportButton';
 import { getTheme } from '@/lib/themes';
 import { contributeLink, recipientLink } from '@/lib/links';
+import { AccountMenu } from '@/components/AccountMenu';
 import type { Card, Contributor, Recipient } from '@/lib/types';
 
 interface DashboardData {
@@ -112,6 +113,9 @@ export default function CreatorDashboard({
   return (
     <main className={`min-h-screen ${theme.bg}`}>
       <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-3">
+          <AccountMenu showSignInWhenLoggedOut={false} />
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <Link href="/" className="text-sm text-stone-500 hover:text-stone-700">

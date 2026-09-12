@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSSRBrowserClient } from '@/lib/supabase/ssr-browser';
+import { AccountMenu } from '@/components/AccountMenu';
 
 export default function HomePage() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -17,7 +18,10 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-rose-50 to-orange-50">
-      <div className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
+      <div className="mx-auto max-w-3xl px-4 pt-4">
+        <AccountMenu />
+      </div>
+      <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:pb-24">
         <header className="text-center">
           <div className="mb-4 animate-float text-6xl">💌</div>
           <h1 className="font-display text-4xl font-bold text-stone-800 sm:text-5xl">
